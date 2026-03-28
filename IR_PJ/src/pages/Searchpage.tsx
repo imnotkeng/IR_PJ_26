@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { SearchBar } from './components/searchBar';
-import { useSearchStore } from './store/searchStore';
-import { useSearch } from './hooks/useSearch';
-import { RecipeCard } from './components/RecipeCard';
-import { RecipeModal } from './components/RecipeModal';
-import type { Recipe } from './types/recipe';
+import { SearchBar } from '@/components/searchBar';
+import { useSearchStore } from '@/store/searchStore';
+import { useSearch } from '@/hooks/useSearch';
+import { RecipeCard } from '@/components/RecipeCard';
+import { RecipeModal } from '@/components/RecipeModal';
+import type { Recipe } from '@/types/recipe';
 
 export const Searchpage = () => {
   const { results, isLoading, suggestion } = useSearchStore();
