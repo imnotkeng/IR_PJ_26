@@ -38,16 +38,19 @@ def search(q: str = Query(None, description="Search query")):
             }
         },
         "suggest": {
-            "text": q,
-            "spell_suggest": {
-                "phrase": {
-                    "field": "Name_clean",
-                    "size": 1,
-                    "gram_size": 3,
-                    "direct_generator": [{"field": "Name_clean", "suggest_mode": "always"}]
+                "text": q,
+                # ลบ spell_suggest (phrase) ออก แล้วใช้ term แทน
+                "term_suggest": {
+                    "term": {
+                        "field": "Name_clean",
+                        "suggest_mode": "popular",   # แนะนำเฉพาะคำที่ไม่พบใน index
+                        "min_word_length": 3,        # ไม่แนะนำคำสั้นเกินไป
+                        "prefix_length": 1,          # ตัวแรกต้องตรง (chicke → chicken ✓)
+                        "max_edits": 2,              # ยอมรับการผิดได้ 2 ตัวอักษร
+                        "string_distance": "internal"  
+                    }
                 }
-            }
-        },
+            },
         "highlight": {
             "fields": {
                 "Name_clean": {},
@@ -65,9 +68,24 @@ def search(q: str = Query(None, description="Search query")):
         response = es.search(index=INDEX_NAME, body=body)
 
         suggestions = []
-        if "suggest" in response and response["suggest"]["spell_suggest"][0]["options"]:
-            for option in response["suggest"]["spell_suggest"][0]["options"]:
-                suggestions.append(option["text"])
+        if "suggest" in response:
+                # เปลี่ยนจาก spell_suggest เป็น term_suggest
+            term_opts = response["suggest"].get("term_suggest", [])
+            corrected_words = []
+            original_words = q.split()
+                
+            for i, token in enumerate(term_opts):
+                if token["options"]:
+                        # มีคำแนะนำสำหรับคำนี้ → ใช้คำแนะนำ
+                    corrected_words.append(token["options"][0]["text"])
+                else:
+                        # ไม่มีคำแนะนำ → ใช้คำเดิม
+                    corrected_words.append(original_words[i] if i < len(original_words) else "")
+                
+            corrected = " ".join(corrected_words)
+                # แสดง suggestion เฉพาะเมื่อมีคำที่ถูกแก้จริง
+            if corrected.lower() != q.lower():
+                suggestions.append(corrected)
 
         # ไม่จำเป็นต้องดึง max_score หากไม่ได้ใช้งานต่อ แต่เก็บไว้ตาม logic เดิม
         max_score = response["hits"]["max_score"] or 1.0
