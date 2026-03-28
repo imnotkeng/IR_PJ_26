@@ -1,20 +1,20 @@
-from flask import Blueprint, request, jsonify
+from fastapi import APIRouter, HTTPException, Query
 from elasticsearch import Elasticsearch
 
-# 1. Create a Blueprint for search
-search_bp = Blueprint('search_bp', __name__)
+# 1. Create a Router for search (เทียบเท่า Blueprint)
+router = APIRouter()
 
 # 2. Setup Elasticsearch
 es = Elasticsearch("http://localhost:9200") 
 INDEX_NAME = "ir_recipes"
 
-# 3. Change @app.route to @search_bp.route
-@search_bp.route("/search", methods=["GET"])
-
-def search():
-    query = request.args.get("q", "")
-    if not query:
-        return jsonify({"error": "Query parameter 'q' is required"}), 400
+# 3. Change @app.route to @router.get
+@router.get("/search")
+def search(q: str = Query(None, description="Search query")):
+    # ตรวจสอบค่า query param
+    if not q:
+        # ใช้ HTTPException แทนการ return 400 แบบเดิม
+        raise HTTPException(status_code=400, detail="Query parameter 'q' is required")
 
     body = {
         "size": 12,
@@ -23,7 +23,7 @@ def search():
                 "must": [
                     {
                         "multi_match": {
-                            "query": query,
+                            "query": q,
                             "fields": [
                                 "Name_clean^5",
                                 "RecipeIngredientParts_clean^2",
@@ -38,7 +38,7 @@ def search():
             }
         },
         "suggest": {
-            "text": query,
+            "text": q,
             "spell_suggest": {
                 "phrase": {
                     "field": "Name_clean",
@@ -69,6 +69,7 @@ def search():
             for option in response["suggest"]["spell_suggest"][0]["options"]:
                 suggestions.append(option["text"])
 
+        # ไม่จำเป็นต้องดึง max_score หากไม่ได้ใช้งานต่อ แต่เก็บไว้ตาม logic เดิม
         max_score = response["hits"]["max_score"] or 1.0
 
         hits = []
@@ -82,7 +83,6 @@ def search():
             ingredients = item.get("RecipeIngredientParts", [])
             ingredients_str = ", ".join(ingredients) if isinstance(ingredients, list) else str(ingredients)
 
-           
             images = item.get("Images", [])
             if isinstance(images, list) and len(images) > 0:
                 image_link = images[0]
@@ -91,7 +91,6 @@ def search():
             else:
                 image_link = "https://placehold.co/600x400?text=No+Image+Available"
 
-      
             hits.append({
                 "id": str(item.get("RecipeId")),
                 "name": item.get("Name", "Unknown"),
@@ -101,10 +100,12 @@ def search():
                 "steps": snippet
             })
 
-        
-        return jsonify({
+        # Return dict ออกไปได้เลย FastAPI จะแปลงเป็น JSON ให้อัตโนมัติ
+        return {
             "suggestion": suggestions[0] if suggestions else None,
             "results": hits
-        })
+        }
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # จัดการ Error 500
+        raise HTTPException(status_code=500, detail=str(e))
