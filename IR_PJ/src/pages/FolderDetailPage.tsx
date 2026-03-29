@@ -170,7 +170,7 @@ const handleOpenRecipe = async (recipeData: Recipe | Recommendation | SimilarRec
                     {bookmark.recipe?.name || `Recipe #${bookmark.recipe_id}`}
                   </h3>
                   <div className="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-50">
-                    <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : '')}</span>
+                    <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes}` : '')}</span>
                     <span>Saved: {new Date(bookmark.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
