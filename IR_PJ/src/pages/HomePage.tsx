@@ -4,8 +4,9 @@ import { SearchBar } from '@/components/searchBar';
 import { RecipeCarousel } from '@/components/RecipeCarousel';
 import { useAuthStore } from '@/store/authStore';
 import { RecipeModal } from '@/components/RecipeModal';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe, CarouselRecipe } from '@/types/recipe';
 import BookmarkModal from '@/components/BookmarkModal';
+
 export const HomePage = () => {
   const { user } = useAuthStore();
   
@@ -44,11 +45,17 @@ export const HomePage = () => {
     fetchHomeData();
   }, [user]);
 
-  const handleRecipeClick = async (recipePreview: any) => {
+  const handleRecipeClick = async (recipePreview: CarouselRecipe) => {
     try {
-      // Use the ID from the clicked card to get the full data (ingredients, steps, etc.)
+      
       const response = await apiClient.get(`/api/recipes/${recipePreview.id}`);
-      setSelectedRecipe(response.data);
+
+      const fullRecipe = {
+        ...response.data,
+        reasons: recipePreview.reasons // <-- This saves the reasons!
+      };
+      
+      setSelectedRecipe(fullRecipe);
     } catch (error) {
       console.error("Failed to load full recipe details", error);
       alert("Could not load the recipe details right now.");
@@ -94,6 +101,7 @@ export const HomePage = () => {
           recipe={selectedRecipe} 
           onClose={() => setSelectedRecipe(null)} 
           onBookmarkClick={(recipe) => setRecipeToBookmark(recipe)}
+          onSimilarClick={(recipePreview) => handleRecipeClick(recipePreview)}
         />
       )}
 

@@ -6,6 +6,7 @@ export interface Recipe {
   image_url: string;
   minutes: number;
   score: number;
+  reasons?: string[];
 }
 
 export interface SearchResponse {
@@ -18,6 +19,7 @@ export interface Recommendation {
   name: string;
   image_url: string;
   prediction_score: number;
+  reasons?: string[];
 }
 
 export interface Bookmark{
@@ -29,4 +31,22 @@ export interface Bookmark{
   folder_name: string;
   created_at: string;
   recipe?: Recipe;
+}
+
+export interface CarouselRecipe {
+  id: string | number;
+  name: string;
+  image_url: string;
+  minutes?: number;
+  prediction_score?: number;
+  reasons?: string[];
+}
+
+export interface SimilarRecipe {
+  id: string | number;
+  name: string;
+  image_url: string;
+  minutes?: number;
+  prediction_score?: number;
+  reasons?: string[];
 }

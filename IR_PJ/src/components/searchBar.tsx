@@ -16,10 +16,10 @@ export const SearchBar = () => {
   
   const navigate = useNavigate(); // 👈 Initialize navigate
 
-  const showSuggestion = (
-    (isFocused && localQuery.trim().length >= 2) ||
-    (query && localQuery === query)
-  ) && !!suggestion;
+ const showSuggestion = (
+  (isFocused && localQuery.trim().length >= 2) ||
+  (!!query && localQuery === query)      
+) && !!suggestion;
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

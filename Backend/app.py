@@ -12,13 +12,13 @@ from routes.folder_routes import router as folder_router
 from routes.bookmark_routes import router as bookmark_router 
 from routes.recommendation_routes import router as recommendation_router
 
-# This runs once when the server starts
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load models here
     ml.load_models()
     yield
-    # Code here runs when the server shuts down
+    # Code here runs when the server shuts dow
     print("Shutting down server...")
 
 # Add lifespan to the FastAPI app

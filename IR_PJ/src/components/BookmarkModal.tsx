@@ -74,8 +74,9 @@ export default function BookmarkModal({ isOpen, onClose, recipeId, recipeName }:
       });
 
       onClose(); 
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || "Failed to save bookmark.");
+    } catch (err) {
+      const error = err as { response?: { data?: { detail?: string } }; message?: string };
+      setError(error.response?.data?.detail || error.message || "Failed to save bookmark.");
     } finally {
       setIsLoading(false);
     }

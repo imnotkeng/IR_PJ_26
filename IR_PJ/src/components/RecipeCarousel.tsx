@@ -1,6 +1,4 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+
 import { type CarouselRecipe} from '@/types/recipe'
 
 interface Props {
@@ -8,7 +6,7 @@ interface Props {
   subtitle: string;
   recipes: CarouselRecipe[];
   isLoading: boolean;
-  onRecipeClick: (recipe: any) => void;
+onRecipeClick: (recipe: CarouselRecipe) => void;
 }
 
 export const RecipeCarousel = ({ title, subtitle, recipes, isLoading, onRecipeClick }: Props) => {

@@ -5,11 +5,15 @@ import { RecipeCard } from '@/components/RecipeCard';
 import { RecipeModal } from '@/components/RecipeModal';
 import { motion } from "framer-motion";
 import type { Recipe } from '@/types/recipe';
-
+import BookmarkModal from '@/components/BookmarkModal';
 export const Searchpage = () => {
   // We can remove 'suggestion' from here since SearchBar handles it
   const { results, isLoading, query } = useSearchStore(); 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [recipeToBookmark, setRecipeToBookmark] = useState<Recipe | null>(null);
+  const handleBookmarkClick = useCallback((recipe: Recipe) => {
+    setRecipeToBookmark(recipe);
+  }, []);
 
   // This stops React from slowing down when you type
   const handleRecipeClick = useCallback((recipe: Recipe) => {
@@ -52,6 +56,7 @@ export const Searchpage = () => {
                 recipe={recipe} 
                 index={index}
                 onClick={handleRecipeClick} 
+                onBookmarkClick={handleBookmarkClick}
               />
             ))}
           </div>
@@ -61,6 +66,17 @@ export const Searchpage = () => {
           <RecipeModal 
             recipe={selectedRecipe} 
             onClose={() => setSelectedRecipe(null)} 
+            onBookmarkClick={handleBookmarkClick}
+            
+          />
+        )}
+
+        {recipeToBookmark && (
+          <BookmarkModal
+            isOpen={!!recipeToBookmark}
+            onClose={() => setRecipeToBookmark(null)}
+            recipeId={Number(recipeToBookmark.id)} 
+            recipeName={recipeToBookmark.name}
           />
         )}
       </div>
