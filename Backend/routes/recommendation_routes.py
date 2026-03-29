@@ -72,12 +72,12 @@ def generate_ml_recommendations(bookmarks, limit=10):
             # Count frequencies, but ignore single letters and weird symbols
             for i in ing_list:
                 clean_i = i.lower().strip(' "(),')
-                if len(clean_i) > 2: # 👈 Forces it to be a real word, not "e" or '"'
+                if len(clean_i) > 2: 
                     user_ingredient_counts[clean_i] += 1
                     
             for k in kw_list:
                 clean_k = k.lower().strip(' "(),')
-                if len(clean_k) > 2: # 👈 Forces it to be a real word
+                if len(clean_k) > 2: 
                     user_keyword_counts[clean_k] += 1
 
     if not bookmark_texts:
