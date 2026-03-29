@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '@/service/apiClient';
 import { bookmarkService} from '@/service/bookmarkService';
@@ -14,39 +14,43 @@ export default function BookmarksPage() {
   const { user } = useAuthStore();
   
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
+ const [isLoading, setIsLoading] = useState(false);
   // Modal states
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [recipeToBookmark, setRecipeToBookmark] = useState<Recipe | null>(null);
 
+  const fetchAllBookmarks = useCallback(async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const bookmarkData = await bookmarkService.getUserBookmarks(user.id);
+      const populatedBookmarks = await Promise.all(
+        bookmarkData.map(async (bookmark) => {
+          try {
+            const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
+            return { ...bookmark, recipe: recipeResponse.data };
+          } catch {
+            return bookmark; 
+          }
+        })
+      );
+      setBookmarks(populatedBookmarks);
+    } catch (error) {
+      console.error("Failed to load all bookmarks", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
-    const fetchAllBookmarks = async () => {
-      if (!user?.id) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const bookmarkData = await bookmarkService.getUserBookmarks(user.id);
-        const populatedBookmarks = await Promise.all(
-          bookmarkData.map(async (bookmark) => {
-            try {
-              const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
-              return { ...bookmark, recipe: recipeResponse.data };
-            } catch {
-              return bookmark; 
-            }
-          })
-        );
-        setBookmarks(populatedBookmarks);
-      } catch (error) {
-        console.error("Failed to load all bookmarks", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchAllBookmarks();
-  }, [user]);
+  }, [fetchAllBookmarks]);
+
 
   const handleDelete = async (e: React.MouseEvent, bookmarkId: number) => {
     e.stopPropagation(); 
@@ -69,18 +73,11 @@ export default function BookmarksPage() {
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-gray-500">Loading your culinary vault...</div>;
+  
 
-  if (!user) {
-    return (
-      <div className="p-6 max-w-6xl mx-auto text-center mt-20">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Please log in</h2>
-        <p className="text-gray-600">You need to log in to view your saved recipes.</p>
-      </div>
-    );
-  }
 
   return (
+
     <div className="min-h-screen bg-slate-50/50 pt-10 pb-20">
       <div className="p-6 max-w-6xl mx-auto">
         
@@ -96,7 +93,24 @@ export default function BookmarksPage() {
         </div>
 
         {/* Grid */}
-        {bookmarks.length === 0 ? (
+        {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden h-full animate-pulse">
+              <div className="aspect-square bg-slate-200" />
+              <div className="p-5 flex flex-col gap-3">
+                <div className="h-3 bg-slate-200 rounded w-1/3" />
+                <div className="h-4 bg-slate-200 rounded w-full" />
+                <div className="h-4 bg-slate-200 rounded w-2/3" />
+                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between">
+                  <div className="h-3 bg-slate-200 rounded w-1/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) :bookmarks.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
             <p className="text-gray-500 text-lg">Your vault is empty.</p>
             <button 
@@ -170,7 +184,11 @@ export default function BookmarksPage() {
         {recipeToBookmark && (
           <BookmarkModal
             isOpen={!!recipeToBookmark}
-            onClose={() => setRecipeToBookmark(null)}
+            onClose={() => {
+              setRecipeToBookmark(null);
+            
+              fetchAllBookmarks(); 
+            }}
             recipeId={Number(recipeToBookmark.id)} 
             recipeName={recipeToBookmark.name}
           />

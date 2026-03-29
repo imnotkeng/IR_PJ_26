@@ -28,29 +28,29 @@ export default function FolderDetailPage() {
   const { folders } = useFolderStore();
   const currentFolder = folders.find(f => f.id === Number(folderId));
 
+  const fetchFolderBookmarks = async () => {
+    if (!folderId) return;
+    try {
+      const bookmarkData = await bookmarkService.getFolderBookmarks(Number(folderId));
+      const populatedBookmarks = await Promise.all(
+        bookmarkData.map(async (bookmark) => {
+          try {
+           const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
+            return { ...bookmark, recipe: recipeResponse.data };
+          } catch {
+            return bookmark; 
+          }
+        })
+      );
+      setBookmarks(populatedBookmarks);
+    } catch (error) {
+      console.error("Failed to load folder bookmarks", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchFolderBookmarks = async () => {
-      if (!folderId) return;
-      try {
-        const bookmarkData = await bookmarkService.getFolderBookmarks(Number(folderId));
-        const populatedBookmarks = await Promise.all(
-          bookmarkData.map(async (bookmark) => {
-            try {
-             const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
-              return { ...bookmark, recipe: recipeResponse.data };
-            } catch {
-              return bookmark; 
-            }
-          })
-        );
-        setBookmarks(populatedBookmarks);
-      } catch (error) {
-        console.error("Failed to load folder bookmarks", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFolderBookmarks();
+    setIsLoading(true);
+    fetchFolderBookmarks().finally(() => setIsLoading(false));
   }, [folderId]);
 
   const handleDelete = async (e: React.MouseEvent, bookmarkId: number) => {
@@ -238,7 +238,10 @@ const handleOpenRecipe = async (recipeData: Recipe | Recommendation | SimilarRec
         {recipeToBookmark && (
           <BookmarkModal
             isOpen={!!recipeToBookmark}
-            onClose={() => setRecipeToBookmark(null)}
+            onClose={() => {
+              setRecipeToBookmark(null);
+              fetchFolderBookmarks();
+            }}
             recipeId={Number(recipeToBookmark.id)} 
             recipeName={recipeToBookmark.name}
           />
