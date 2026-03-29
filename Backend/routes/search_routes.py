@@ -1,19 +1,19 @@
 from fastapi import APIRouter, HTTPException, Query
 from elasticsearch import Elasticsearch
 
-# 1. Create a Router for search (เทียบเท่า Blueprint)
+# 1. Create a Router for search
 router = APIRouter()
 
 # 2. Setup Elasticsearch
 es = Elasticsearch("http://localhost:9200") 
 INDEX_NAME = "ir_recipes"
 
-# 3. Change @app.route to @router.get
+# ==========================================
+# 3. EXISTING SEARCH ROUTE (Search Multiple)
+# ==========================================
 @router.get("/search")
 def search(q: str = Query(None, description="Search query")):
-    # ตรวจสอบค่า query param
     if not q:
-        # ใช้ HTTPException แทนการ return 400 แบบเดิม
         raise HTTPException(status_code=400, detail="Query parameter 'q' is required")
 
     body = {
@@ -39,12 +39,14 @@ def search(q: str = Query(None, description="Search query")):
         },
         "suggest": {
             "text": q,
-            "spell_suggest": {
-                "phrase": {
+            "term_suggest": {
+                "term": {
                     "field": "Name_clean",
-                    "size": 1,
-                    "gram_size": 3,
-                    "direct_generator": [{"field": "Name_clean", "suggest_mode": "always"}]
+                    "suggest_mode": "popular",   
+                    "min_word_length": 3,        
+                    "prefix_length": 1,          
+                    "max_edits": 2,              
+                    "string_distance": "internal"  
                 }
             }
         },
@@ -65,15 +67,23 @@ def search(q: str = Query(None, description="Search query")):
         response = es.search(index=INDEX_NAME, body=body)
 
         suggestions = []
-        if "suggest" in response and response["suggest"]["spell_suggest"][0]["options"]:
-            for option in response["suggest"]["spell_suggest"][0]["options"]:
-                suggestions.append(option["text"])
-
-        # ไม่จำเป็นต้องดึง max_score หากไม่ได้ใช้งานต่อ แต่เก็บไว้ตาม logic เดิม
-        max_score = response["hits"]["max_score"] or 1.0
+        if "suggest" in response:
+            term_opts = response["suggest"].get("term_suggest", [])
+            corrected_words = []
+            original_words = q.split()
+                
+            for i, token in enumerate(term_opts):
+                if token["options"]:
+                    corrected_words.append(token["options"][0]["text"])
+                else:
+                    corrected_words.append(original_words[i] if i < len(original_words) else "")
+                
+            corrected = " ".join(corrected_words)
+            if corrected.lower() != q.lower():
+                suggestions.append(corrected)
 
         hits = []
-        for i, hit in enumerate(response["hits"]["hits"]):
+        for hit in response["hits"]["hits"]:
             item = hit["_source"]
 
             snippet = ""
@@ -100,12 +110,64 @@ def search(q: str = Query(None, description="Search query")):
                 "steps": snippet
             })
 
-        # Return dict ออกไปได้เลย FastAPI จะแปลงเป็น JSON ให้อัตโนมัติ
         return {
             "suggestion": suggestions[0] if suggestions else None,
             "results": hits
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        # จัดการ Error 500
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# 4. NEW ROUTE (Get Single Recipe by ID)
+# ==========================================
+@router.get("/api/recipes/{recipe_id}")
+def get_recipe_by_id(recipe_id: int):
+    """Fetch a single recipe by its RecipeId from Elasticsearch."""
+    try:
+        # Search Elasticsearch for an exact match on RecipeId
+        body = {
+            "query": {
+                "term": {
+                    "RecipeId": recipe_id
+                }
+            }
+        }
+        
+        response = es.search(index=INDEX_NAME, body=body)
+        
+        if response["hits"]["total"]["value"] == 0:
+            raise HTTPException(status_code=404, detail="Recipe not found")
+            
+        item = response["hits"]["hits"][0]["_source"]
+        
+        # Format the ingredients nicely
+        ingredients = item.get("RecipeIngredientParts", [])
+        ingredients_str = ", ".join(ingredients) if isinstance(ingredients, list) else str(ingredients)
+
+        # Grab the first image if available
+        images = item.get("Images", [])
+        if isinstance(images, list) and len(images) > 0:
+            image_link = images[0]
+        elif isinstance(images, str) and images.strip() != "":
+            image_link = images
+        else:
+            image_link = "https://placehold.co/600x400?text=No+Image+Available"
+
+        # Return the exact format your frontend 'Recipe' interface expects
+        return {
+            "id": str(item.get("RecipeId")),
+            "name": item.get("Name", "Unknown"),
+            "minutes": item.get("TotalTime", 0),  
+            "image_url": image_link,              
+            "ingredients": ingredients_str,
+            "steps": str(item.get("RecipeInstructions", "Instructions not available."))
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

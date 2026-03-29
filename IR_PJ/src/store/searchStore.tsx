@@ -20,5 +20,7 @@ export const useSearchStore = create<SearchState>((set) => ({
   setQuery: (query) => set({ query }),
   setResults: (results) => set({ results }),
   setIsLoading: (isLoading) => set({ isLoading }),
-  setSuggestion: (suggestion) => set({ suggestion }),
+ // searchStore.ts
+setSuggestion: (suggestion: string | null) => set({ suggestion }),
 }));
+

@@ -4,57 +4,72 @@ import { useSearchStore } from '@/store/searchStore';
 import { useSearch } from '@/hooks/useSearch';
 import { RecipeCard } from '@/components/RecipeCard';
 import { RecipeModal } from '@/components/RecipeModal';
+import { motion } from "framer-motion";
 import type { Recipe } from '@/types/recipe';
 
 export const Searchpage = () => {
-  const { results, isLoading, suggestion } = useSearchStore();
+  const { results, isLoading, suggestion, query } = useSearchStore();
   const { acceptSuggestion } = useSearch();
-  
-  // State สำหรับเก็บว่าผู้ใช้คลิกเลือกเมนูไหนอยู่ (เพื่อเอาไปโชว์ใน Modal)
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">Find Your Recipes</h1>
-      
-      <div className="max-w-2xl mx-auto">
-        <SearchBar />
-      </div>
+    <div className="min-h-screen bg-slate-50/50 pb-20">
+      {/* ใส่ SearchBar ที่มี Hero UI ไว้ด้านบนสุด */}
+      <SearchBar />
 
-      {suggestion && (
-        <div className="mt-4 p-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg text-center max-w-2xl mx-auto">
-          Did you mean: {' '}
-          <button onClick={acceptSuggestion} className="font-bold underline hover:text-yellow-600">
-            {suggestion}
-          </button>
-          ?
-        </div>
-      )}
+      <div className="container mx-auto px-6 max-w-7xl">
+        {suggestion && (
+          <div className="mb-8 p-4 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-center max-w-2xl mx-auto shadow-sm">
+            Did you mean: {' '}
+            <button onClick={acceptSuggestion} className="font-bold underline hover:text-amber-600 transition-colors">
+              {suggestion}
+            </button>
+            ?
+          </div>
+        )}
 
-      {isLoading && (
-        <div className="mt-8 text-center text-gray-500 font-medium">
-          <span className="animate-pulse">Loading amazing dishes...</span>
-        </div>
-      )}
+        {/* Section Header สไตล์รูปที่ 2 */}
+        {results && results.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mb-8"
+          >
+            <h2 className="font-display text-3xl font-bold text-slate-800 mb-2">
+              {query ? `Search Results for "${query}"` : "Recommended for You"}
+            </h2>
+            <p className="text-slate-500">
+              {query ? `Found ${results.length} amazing recipes` : "Based on your bookmarks and favorites"}
+            </p>
+          </motion.div>
+        )}
 
-      {/* Grid สำหรับแสดงการ์ด */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
-        {results?.map((recipe) => (
-          <RecipeCard 
-            key={recipe.id} 
-            recipe={recipe} 
-            onClick={(clickedRecipe) => setSelectedRecipe(clickedRecipe)} 
+        {isLoading ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center">
+            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+            <span className="text-slate-500 font-medium">Loading amazing dishes...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {results?.map((recipe, index) => (
+              <RecipeCard 
+                key={recipe.id} 
+                recipe={recipe} 
+                index={index}
+                onClick={(clickedRecipe) => setSelectedRecipe(clickedRecipe)} 
+              />
+            ))}
+          </div>
+        )}
+
+        {selectedRecipe && (
+          <RecipeModal 
+            recipe={selectedRecipe} 
+            onClose={() => setSelectedRecipe(null)} 
           />
-        ))}
+        )}
       </div>
-
-      {/* แสดง Modal เมื่อมี selectedRecipe */}
-      {selectedRecipe && (
-        <RecipeModal 
-          recipe={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
-        />
-      )}
     </div>
   );
 };
