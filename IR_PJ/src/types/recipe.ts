@@ -6,6 +6,7 @@ export interface Recipe {
   image_url: string;
   minutes: number;
   score: number;
+  reasons?: string[];
 }
 
 export interface SearchResponse {
@@ -18,6 +19,7 @@ export interface Recommendation {
   name: string;
   image_url: string;
   prediction_score: number;
+  reasons?: string[];
 }
 
 export interface Bookmark{

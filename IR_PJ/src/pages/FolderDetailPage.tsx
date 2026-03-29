@@ -6,7 +6,7 @@ import { bookmarkService, type Bookmark } from '@/service/bookmarkService';
 import { useFolderStore } from '@/store/folderStore';
 import { Star, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { type Recommendation } from '@/types/recipe';
-
+import { formatDuration } from '@/lib/utils';
 export default function FolderDetailPage() {
   const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
@@ -179,7 +179,7 @@ export default function FolderDetailPage() {
                   </h3>
                   
                   <div className="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-50">
-                    <span>{bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : ''}</span>
+                    <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : '')}</span>
                     <span>Saved: {new Date(bookmark.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>

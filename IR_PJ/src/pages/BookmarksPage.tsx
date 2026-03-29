@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '@/service/apiClient';
-import { bookmarkService, type Bookmark } from '@/service/bookmarkService';
+import { bookmarkService} from '@/service/bookmarkService';
 import { useAuthStore } from '@/store/authStore';
 import { Star, Trash2, BookOpen } from "lucide-react";
+import { type Bookmark  } from '@/types/recipe';
+import { formatDuration } from '@/lib/utils';
 
 export default function BookmarksPage() {
   const navigate = useNavigate();
@@ -139,7 +141,8 @@ export default function BookmarksPage() {
                   </h3>
                   
                   <div className="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-50">
-                    <span>{bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : ''}</span>
+                   
+                    <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : '')}</span>
                     <span>Saved: {new Date(bookmark.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
