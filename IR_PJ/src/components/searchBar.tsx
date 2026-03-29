@@ -54,7 +54,7 @@ export const SearchBar = () => {
   return (
     <section className="relative min-h-[75vh] md:min-h-[92vh] flex items-center justify-center overflow-hidden rounded-b-[3rem] mb-12 shadow-sm">
       <div className="absolute inset-0">
-        <img src={heroImage} alt="Delicious food background" className="w-full h-full object-cover" />
+        <img loading="lazy" src={heroImage} alt="Delicious food background" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/70 to-slate-900/80" />
       </div>
 

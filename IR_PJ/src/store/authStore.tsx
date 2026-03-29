@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-
+import { API_URL } from '../config'; // 🌟 Added import
 
 interface User {
   id: number;
@@ -33,7 +33,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:5001/auth/me", {
+      // 🌟 Changed hardcoded URL to API_URL
+      const res = await fetch(`${API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -41,7 +42,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const userData = await res.json();
         set({ user: userData, isAuthenticated: true });
       } else {
-        // ถ้า Token หมดอายุหรือไม่ถูกต้อง
         logout();
       }
     } catch (error) {

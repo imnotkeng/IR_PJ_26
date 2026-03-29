@@ -1,11 +1,11 @@
 import React from 'react';
-import { Bookmark } from "lucide-react"; // 👈 Import icon
+import { Bookmark } from "lucide-react"; 
 import type { Recipe } from '../types/recipe';
-
+import { formatDuration } from '@/lib/utils';
 interface RecipeModalProps {
   recipe: Recipe;
   onClose: () => void;
-  onBookmarkClick: (recipe: Recipe) => void; // 👈 NEW PROP
+  onBookmarkClick: (recipe: Recipe) => void; 
 }
 
 export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBookmarkClick }) => {
@@ -36,6 +36,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBoo
         {/* Hero Image */}
         <div className="relative h-96 w-full">
           <img 
+            loading="lazy"
             src={recipe.image_url} 
             alt={recipe.name} 
             className="w-full h-full object-cover rounded-t-[2rem]"
@@ -50,8 +51,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBoo
         {/* Content */}
         <div className="p-8 md:p-10">
           <div className="flex items-center gap-2 mb-8 bg-blue-50 text-blue-600 w-fit px-5 py-2.5 rounded-full font-semibold text-sm">
-            <span>⏱️</span>
-            <span>{recipe.minutes} mins</span>
+            <span>{formatDuration(recipe.minutes)}</span>
           </div>
           
           <div className="mb-10">

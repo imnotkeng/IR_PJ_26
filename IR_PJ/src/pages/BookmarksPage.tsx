@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '@/service/apiClient';
 import { bookmarkService, type Bookmark } from '@/service/bookmarkService';
 import { useAuthStore } from '@/store/authStore';
 import { Star, Trash2, BookOpen } from "lucide-react";
@@ -27,7 +27,7 @@ export default function BookmarksPage() {
         const populatedBookmarks = await Promise.all(
           bookmarkData.map(async (bookmark) => {
             try {
-              const recipeResponse = await axios.get(`http://localhost:5001/api/recipes/${bookmark.recipe_id}`);
+              const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
               return { ...bookmark, recipe: recipeResponse.data };
             } catch (err) {
               console.error(`Failed to fetch recipe ${bookmark.recipe_id}`);
@@ -115,6 +115,7 @@ export default function BookmarksPage() {
                 
                 <div className="relative aspect-square overflow-hidden bg-slate-100 shrink-0">
                   <img
+                    loading="lazy"
                     src={bookmark.recipe?.image_url || "https://placehold.co/600x600?text=No+Image"}
                     alt={bookmark.recipe?.name || "Recipe"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

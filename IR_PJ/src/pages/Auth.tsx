@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChefHat, Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
+import {  Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../store/authStore"; // 🌟 1. นำเข้า Store ของเรา
+import { useAuthStore } from "../store/authStore"; 
+import myLogo from '@/assets/Logo.png';
+import { API_URL } from '../config'; // 🌟 Added import
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,7 +20,6 @@ export default function Auth() {
   
   const navigate = useNavigate();
 
-  // 🌟 2. ดึงฟังก์ชัน setToken และ fetchUser ออกมาจาก Store
   const setToken = useAuthStore((state) => state.setToken);
   const fetchUser = useAuthStore((state) => state.fetchUser);
 
@@ -29,14 +30,13 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        // ------------------------------------
         // 1. LOGIN FLOW
-        // ------------------------------------
         const formData = new URLSearchParams();
         formData.append("username", email); 
         formData.append("password", password);
 
-        const res = await fetch("http://localhost:5001/auth/token", {
+        // 🌟 Changed hardcoded URL to API_URL
+        const res = await fetch(`${API_URL}/auth/token`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: formData,
@@ -48,19 +48,14 @@ export default function Auth() {
         }
 
         const data = await res.json();
-        
-        // 🌟 3. เปลี่ยนจาก localStorage.setItem เป็นการใช้ฟังก์ชันของ Store แทน!
         setToken(data.access_token); 
-        
-        // 🌟 4. สั่งให้ Store ไปดึงข้อมูลชื่อ User ทันที (เพื่อให้โชว์บน Navbar โดยไม่ต้อง F5)
         await fetchUser();
-        
-        // ไปที่หน้าแรก
         navigate("/");
 
       } else {
-        // ... (โค้ดส่วน Signup ด้านล่างปล่อยไว้เหมือนเดิมได้เลยครับ) ...
-        const res = await fetch("http://localhost:5001/auth/signup", {
+        // 2. SIGNUP FLOW
+        // 🌟 Changed hardcoded URL to API_URL
+        const res = await fetch(`${API_URL}/auth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -111,9 +106,13 @@ export default function Auth() {
           transition={{ duration: 0.8 }}
           className="relative z-10 text-center px-12"
         >
-          <ChefHat className="w-16 h-16 text-white mx-auto mb-6" />
+          <img 
+            src={myLogo} 
+            alt="Logo" 
+            className="h-28 w-auto mx-auto mb-6 object-contain drop-shadow-lg" 
+          />
           <h1 className="text-4xl font-bold text-white mb-4">
-            FlavorVault
+            Re-Zip
           </h1>
           <p className="text-white/70 text-lg max-w-sm mx-auto leading-relaxed">
             Your personal recipe collection. Save, organize, and rediscover the dishes you love.
@@ -130,9 +129,13 @@ export default function Auth() {
           className="w-full max-w-md"
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <ChefHat className="w-8 h-8 text-blue-600" />
-            <span className="text-2xl font-bold text-gray-900">FlavorVault</span>
+          <div className="lg:hidden flex items-center gap-3 mb-8">
+            <img 
+              src={myLogo} 
+              alt="Logo" 
+              className="h-10 w-auto object-contain" 
+            />
+            <span className="text-2xl font-bold text-gray-900">Re-Zip</span>
           </div>
 
           <div className="mb-8">
@@ -146,7 +149,6 @@ export default function Auth() {
             </p>
           </div>
 
-          {/* แจ้งเตือน Error / Success */}
           {error && (
             <div className={`mb-6 p-4 rounded-md flex items-start gap-3 ${error.includes("successfully") ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
               <AlertCircle className="w-5 h-5 shrink-0" />
@@ -228,7 +230,7 @@ export default function Auth() {
               type="button"
               onClick={() => {
                 setIsLogin(!isLogin);
-                setError(""); // เคลียร์ error ทิ้งเวลาสลับหน้า
+                setError(""); 
               }}
               className="text-sm text-gray-500 hover:text-blue-600 transition-colors focus:outline-none"
             >

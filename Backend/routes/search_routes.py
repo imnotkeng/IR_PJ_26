@@ -65,7 +65,7 @@ def search(q: str = Query(None, description="Search query")):
 
     try:
         response = es.search(index=INDEX_NAME, body=body)
-
+        max_score = response["hits"].get("max_score") or 1.0
         suggestions = []
         if "suggest" in response:
             term_opts = response["suggest"].get("term_suggest", [])
@@ -86,6 +86,9 @@ def search(q: str = Query(None, description="Search query")):
         for hit in response["hits"]["hits"]:
             item = hit["_source"]
 
+            raw_score = hit.get("_score") or 0.0
+            score = round(raw_score / max_score, 4)
+                          
             snippet = ""
             if "highlight" in hit and "RecipeInstructions_clean" in hit["highlight"]:
                 snippet = hit["highlight"]["RecipeInstructions_clean"][0]
@@ -101,14 +104,19 @@ def search(q: str = Query(None, description="Search query")):
             else:
                 image_link = "https://placehold.co/600x400?text=No+Image+Available"
 
+            total_time = item.get("TotalTime", "Unknown")
+            
             hits.append({
                 "id": str(item.get("RecipeId")),
                 "name": item.get("Name", "Unknown"),
-                "minutes": item.get("TotalTime", 0),  
-                "image_url": image_link,              
+                "minutes": total_time,
+                "image_url": image_link,
                 "ingredients": ingredients_str,
-                "steps": snippet
-            })
+                "steps": snippet if snippet else str(item.get("RecipeInstructions_clean", 
+                                         item.get("RecipeInstructions", 
+                                         "Instructions not available."))),
+                "score": score,
+})
 
         return {
             "suggestion": suggestions[0] if suggestions else None,
@@ -171,3 +179,48 @@ def get_recipe_by_id(recipe_id: int):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/api/suggest")
+def get_fast_suggestion(q: str = Query(..., description="Query to spell check")):
+    """Fast endpoint for real-time typing suggestions"""
+    if not q or len(q.strip()) < 3:
+        return {"suggestion": None}
+
+    body = {
+        "_source": False, # Don't return any recipe data!
+        "suggest": {
+            "text": q,
+            "term_suggest": {
+                "term": {
+                    "field": "Name_clean",
+                    "suggest_mode": "popular",   
+                    "min_word_length": 3,        
+                    "prefix_length": 1,          
+                    "max_edits": 2,              
+                    "string_distance": "internal"  
+                }
+            }
+        }
+    }
+
+    try:
+        response = es.search(index=INDEX_NAME, body=body)
+        
+        if "suggest" in response:
+            term_opts = response["suggest"].get("term_suggest", [])
+            corrected_words = []
+            original_words = q.split()
+                
+            for i, token in enumerate(term_opts):
+                if token["options"]:
+                    corrected_words.append(token["options"][0]["text"])
+                else:
+                    corrected_words.append(original_words[i] if i < len(original_words) else "")
+                
+            corrected = " ".join(corrected_words)
+            if corrected.lower() != q.lower():
+                return {"suggestion": corrected}
+
+        return {"suggestion": None}
+    except Exception as e:
+        return {"suggestion": None}

@@ -1,5 +1,5 @@
 import { useSearchStore } from '../store/searchStore';
-import { searchRecipesApi } from '../service/searchService'; 
+import { searchRecipesApi, getSpellSuggestionApi} from '../service/searchService'; 
 
 export const useSearch = () => {
   const { query, setQuery, setResults, setIsLoading, setSuggestion } = useSearchStore();
@@ -25,19 +25,14 @@ export const useSearch = () => {
     }
   };
 
-  const fetchSuggestion = async (q: string) => {
-  if (!q || q.trim().length < 2) {
-    useSearchStore.getState().setSuggestion(null);
-    return;
-  }
-  try {
-    const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    useSearchStore.getState().setSuggestion(data.suggestion ?? null);
-  } catch {
-    useSearchStore.getState().setSuggestion(null);
-  }
-};
+  const fetchSuggestion = async (query: string) => {
+    try {
+      const suggestion = await getSpellSuggestionApi(query);
+      setSuggestion(suggestion);
+    } catch (error) {
+      console.error("Failed to fetch suggestion");
+    }
+  };
 
 const acceptSuggestion = (text: string) => {
   handleSearch(text);

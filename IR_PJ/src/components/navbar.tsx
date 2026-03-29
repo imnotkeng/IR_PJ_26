@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom"; // Import Link for navigation paths
 
 import { useAuthStore } from "../store/authStore"; 
+import myLogo from "@/assets/logo.png";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -17,16 +18,20 @@ export default function Navbar() {
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      // 1. CHANGED: Added bg-black and text-white for the dark theme
       className="fixed top-0 left-0 right-0 z-50 bg-black backdrop-blur-md border-b border-gray-800 text-white"
     >
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         
         {/* Logo Section */}
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-          <ChefHat className="w-7 h-7 text-primary" />
+          {/* 3. REPLACED CHEFHAT WITH IMG TAG */}
+          <img 
+            src={myLogo} 
+            alt="Logo" 
+            className="h-9 w-auto object-contain" 
+          />
           <span className="font-display text-xl font-bold">
-            FlavorVault
+            re-zip
           </span>
         </div>
 

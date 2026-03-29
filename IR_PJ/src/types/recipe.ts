@@ -5,6 +5,7 @@ export interface Recipe {
   steps: string;
   image_url: string;
   minutes: number;
+  score: number;
 }
 
 export interface SearchResponse {
@@ -17,4 +18,15 @@ export interface Recommendation {
   name: string;
   image_url: string;
   prediction_score: number;
+}
+
+export interface Bookmark{
+  id: number;
+  user_id: number;
+  folder_id: number;
+  recipe_id: number | string; 
+  rating: number;
+  folder_name: string;
+  created_at: string;
+  recipe?: Recipe;
 }

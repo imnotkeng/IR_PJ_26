@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios'; // 👈 Import axios
+import { apiClient } from '@/service/apiClient';
 import { bookmarkService, type Bookmark } from '@/service/bookmarkService';
+
 import { useFolderStore } from '@/store/folderStore';
 import { Star, Trash2, Sparkles, Loader2 } from "lucide-react";
 import { type Recommendation } from '@/types/recipe';
@@ -33,7 +34,7 @@ export default function FolderDetailPage() {
           bookmarkData.map(async (bookmark) => {
             try {
               // Replace this URL with your actual ElasticSearch / single recipe endpoint
-              const recipeResponse = await axios.get(`http://127.0.0.1:5001/api/recipes/${bookmark.recipe_id}`);
+             const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
               
               // Combine the bookmark data with the fetched recipe data
               return { ...bookmark, recipe: recipeResponse.data };
@@ -78,7 +79,7 @@ export default function FolderDetailPage() {
     setHasGenerated(true);
     
     try {
-      const response = await axios.get(`http://127.0.0.1:5001/api/recommendations/folder/${folderId}`);
+      const response = await apiClient.get(`/api/recommendations/folder/${folderId}`);
       setRecommendations(response.data);
     } catch (error) {
       console.error("Failed to generate suggestions", error);
@@ -160,6 +161,7 @@ export default function FolderDetailPage() {
                 
                 <div className="relative aspect-square overflow-hidden bg-slate-100 shrink-0">
                   <img
+                    loading="lazy"
                     src={bookmark.recipe?.image_url || "https://placehold.co/600x600?text=No+Image"}
                     alt={bookmark.recipe?.name || "Recipe"}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -211,6 +213,7 @@ export default function FolderDetailPage() {
                   >
                     <div className="relative aspect-square overflow-hidden bg-slate-100 shrink-0">
                       <img
+                      loading="lazy"
                         src={rec.image_url}
                         alt={rec.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
