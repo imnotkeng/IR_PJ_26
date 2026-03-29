@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { folderService, type Folder } from '@/service/folderService'; 
+import axios from 'axios';
 
 interface FolderStore {
   folders: Folder[];
@@ -22,12 +23,12 @@ export const useFolderStore = create<FolderStore>((set) => ({
     try {
       const data = await folderService.getFolders(userId);
       set({ folders: data, isLoading: false });
-    } catch (error: any) {
-      set({ 
-        error: error.response?.data?.detail || 'Failed to load folders', 
-        isLoading: false 
-      });
-    }
+    } catch (err) {
+      const msg = axios.isAxiosError(err)
+        ? err.response?.data?.detail ?? 'Failed to load folders'
+        : 'Failed to load folders';
+      set({ error: msg, isLoading: false });
+}
   },
 
   // Action to create a new folder
@@ -40,12 +41,12 @@ export const useFolderStore = create<FolderStore>((set) => ({
         folders: [...state.folders, newFolder],
         isLoading: false 
       }));
-    } catch (error: any) {
-      set({ 
-        error: error.response?.data?.detail || 'Failed to create folder', 
-        isLoading: false 
-      });
-    }
+    } catch (err) {
+        const msg = axios.isAxiosError(err)
+          ? err.response?.data?.detail ?? 'Failed to create folder'
+          : 'Failed to create folder';
+        set({ error: msg, isLoading: false });
+}
   },
 
   // Action to delete a folder
@@ -58,11 +59,11 @@ export const useFolderStore = create<FolderStore>((set) => ({
         folders: state.folders.filter((folder) => folder.id !== id),
         isLoading: false
       }));
-    } catch (error: any) {
-      set({ 
-        error: error.response?.data?.detail || 'Failed to delete folder', 
-        isLoading: false 
-      });
-    }
+    } catch (err) {
+  const msg = axios.isAxiosError(err)
+    ? err.response?.data?.detail ?? 'Failed to delete folder'
+    : 'Failed to delete folder';
+  set({ error: msg, isLoading: false });
+}
   }
 }));

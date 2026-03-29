@@ -26,16 +26,20 @@ export const SearchResultsPage = () => {
   const [recipeToBookmark, setRecipeToBookmark] = useState<Recipe | null>(null);
   
   const [localSearch, setLocalSearch] = useState(urlQuery);
+  const [prevUrlQuery, setPrevUrlQuery] = useState(urlQuery);
   
   // 3. Add state for the dropdown visibility and a timer reference
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Trigger search when URL changes
-  useEffect(() => {
+  if (urlQuery !== prevUrlQuery) {
+    setPrevUrlQuery(urlQuery);
+    setLocalSearch(urlQuery);
+  }
+
+useEffect(() => {
     if (urlQuery) {
       handleSearch(urlQuery);
-      setLocalSearch(urlQuery);
     }
   }, [urlQuery]);
 
@@ -58,10 +62,10 @@ export const SearchResultsPage = () => {
   }, [localSearch, urlQuery]);
 
   // 5. Calculate if we should show the dropdown
-  const showSuggestion = (
-    (isFocused && localSearch.trim().length >= 2) ||
-    (urlQuery && localSearch === urlQuery)
-  ) && !!suggestion;
+const showSuggestion = (
+  (isFocused && localSearch.trim().length >= 2) ||
+  (!!urlQuery && localSearch === urlQuery) 
+) && !!suggestion;
 
   const onNewSearch = (e: React.FormEvent) => {
     e.preventDefault();

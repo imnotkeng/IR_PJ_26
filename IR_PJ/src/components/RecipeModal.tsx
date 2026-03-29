@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Bookmark, Sparkles, CheckCircle2 } from "lucide-react";
+import { Bookmark, Sparkles, CheckCircle2, ChefHat } from "lucide-react";
 import type { Recipe } from '../types/recipe';
 import { formatDuration } from '@/lib/utils';
 import { apiClient } from '@/service/apiClient';
@@ -8,12 +8,19 @@ interface RecipeModalProps {
   recipe: Recipe;
   onClose: () => void;
   onBookmarkClick: (recipe: Recipe) => void; 
-  onSimilarClick?: (recipe: any) => void;
+  onSimilarClick?: (recipe: SimilarRecipe) => void;
 }
 
-export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBookmarkClick }) => {
+interface SimilarRecipe {
+  id: number;
+  name: string;
+  image_url: string;
+  minutes: number;
+}
 
-  const [similarRecipes, setSimilarRecipes] = useState<any[]>([]);
+export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBookmarkClick, onSimilarClick }) => {
+
+  const [similarRecipes, setSimilarRecipes] = useState<SimilarRecipe[]>([]);
   const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
 
   useEffect(() => {
@@ -24,7 +31,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBoo
         const res = await apiClient.get(`/api/recipes/${recipe.id}/similar`);
         setSimilarRecipes(res.data);
       } catch (err) {
-        console.error("Failed to load similar recipes");
+        console.error("Failed to load similar recipes", err);
       } finally {
         setIsLoadingSimilar(false);
       }
@@ -32,6 +39,13 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBoo
     
     if (recipe.id) {
       fetchSimilar();
+    }
+  }, [recipe.id]);
+
+  useEffect(() => {
+    const modalContent = document.getElementById('modal-scroll-area');
+    if (modalContent) {
+      modalContent.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [recipe.id]);
 
@@ -132,6 +146,7 @@ export const RecipeModal: React.FC<RecipeModalProps> = ({ recipe, onClose, onBoo
                   >
                     <div className="relative h-28 overflow-hidden bg-slate-100">
                       <img 
+                      loading='lazy'
                         src={simRec.image_url} 
                         alt={simRec.name} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

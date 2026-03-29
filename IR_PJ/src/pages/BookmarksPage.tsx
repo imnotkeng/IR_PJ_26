@@ -4,8 +4,10 @@ import { apiClient } from '@/service/apiClient';
 import { bookmarkService} from '@/service/bookmarkService';
 import { useAuthStore } from '@/store/authStore';
 import { Star, Trash2, BookOpen } from "lucide-react";
-import { type Bookmark  } from '@/types/recipe';
+import { type Bookmark, type Recipe } from '@/types/recipe'; 
 import { formatDuration } from '@/lib/utils';
+import { RecipeModal } from '@/components/RecipeModal'; 
+import BookmarkModal from '@/components/BookmarkModal'; 
 
 export default function BookmarksPage() {
   const navigate = useNavigate();
@@ -14,30 +16,28 @@ export default function BookmarksPage() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Modal states
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [recipeToBookmark, setRecipeToBookmark] = useState<Recipe | null>(null);
+
   useEffect(() => {
     const fetchAllBookmarks = async () => {
       if (!user?.id) {
         setIsLoading(false);
         return;
       }
-
       try {
-        // 1. Fetch ALL bookmarks for this user (Backend already sorts by rating!)
         const bookmarkData = await bookmarkService.getUserBookmarks(user.id);
-
-        // 2. Fetch full recipe details from ElasticSearch to get real images
         const populatedBookmarks = await Promise.all(
           bookmarkData.map(async (bookmark) => {
             try {
               const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
               return { ...bookmark, recipe: recipeResponse.data };
-            } catch (err) {
-              console.error(`Failed to fetch recipe ${bookmark.recipe_id}`);
+            } catch {
               return bookmark; 
             }
           })
         );
-
         setBookmarks(populatedBookmarks);
       } catch (error) {
         console.error("Failed to load all bookmarks", error);
@@ -45,20 +45,27 @@ export default function BookmarksPage() {
         setIsLoading(false);
       }
     };
-    
     fetchAllBookmarks();
   }, [user]);
 
   const handleDelete = async (e: React.MouseEvent, bookmarkId: number) => {
     e.stopPropagation(); 
     if (!window.confirm("Are you sure you want to delete this bookmark?")) return;
-
     try {
       await bookmarkService.deleteBookmark(bookmarkId);
       setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
     } catch (error) {
-      console.error("Failed to delete bookmark", error);
+      console.error("Failed to delete bookmark:", error);
       alert("Could not delete the bookmark. Please try again.");
+    }
+  };
+
+  const handleOpenRecipe = async (recipeData: { id?: string | number; recipe_id?: string | number }) => {
+    try {
+        const response = await apiClient.get(`/api/recipes/${recipeData.id || recipeData.recipe_id}`);
+        setSelectedRecipe(response.data);
+    } catch (error) {
+        console.error("Failed to fetch full recipe", error);
     }
   };
 
@@ -104,7 +111,7 @@ export default function BookmarksPage() {
             {bookmarks.map((bookmark) => (
               <div 
                 key={bookmark.id} 
-                onClick={() => navigate(`/recipe/${bookmark.recipe_id}`)}
+                onClick={() => handleOpenRecipe(bookmark.recipe || { recipe_id: bookmark.recipe_id })}
                 className="group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer h-full relative"
               >
                 <button
@@ -131,7 +138,6 @@ export default function BookmarksPage() {
                 </div>
 
                 <div className="p-5 flex flex-col flex-grow">
-                  {/* Folder Badge so users know where it lives! */}
                   <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-1">
                     {bookmark.folder_name}
                   </span>
@@ -141,7 +147,6 @@ export default function BookmarksPage() {
                   </h3>
                   
                   <div className="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-50">
-                   
                     <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : '')}</span>
                     <span>Saved: {new Date(bookmark.created_at).toLocaleDateString()}</span>
                   </div>
@@ -150,6 +155,27 @@ export default function BookmarksPage() {
             ))}
           </div>
         )}
+
+        {/* Render the Recipe Modal */}
+        {selectedRecipe && (
+          <RecipeModal 
+            recipe={selectedRecipe} 
+            onClose={() => setSelectedRecipe(null)} 
+            onBookmarkClick={(recipe) => setRecipeToBookmark(recipe)}
+            onSimilarClick={(recipe) => handleOpenRecipe(recipe)}
+          />
+        )}
+
+        {/* Render the Bookmark Modal */}
+        {recipeToBookmark && (
+          <BookmarkModal
+            isOpen={!!recipeToBookmark}
+            onClose={() => setRecipeToBookmark(null)}
+            recipeId={Number(recipeToBookmark.id)} 
+            recipeName={recipeToBookmark.name}
+          />
+        )}
+
       </div>
     </div>
   );

@@ -74,9 +74,9 @@ export default function Auth() {
         setPassword("");
         setError("Account created successfully! Please sign in.");
       }
-    } catch (err : any) {
-      setError(err.message);
-    } finally {
+    } catch (err) {
+  setError(err instanceof Error ? err.message : "An unexpected error occurred");
+} finally {
       setLoading(false);
     }
   };

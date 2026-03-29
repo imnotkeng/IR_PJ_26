@@ -1,4 +1,4 @@
-import { User, ChefHat, LogOut, LogIn } from "lucide-react";
+import { User, LogOut, LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom"; // Import Link for navigation paths
 

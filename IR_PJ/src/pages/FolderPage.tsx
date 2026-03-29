@@ -35,7 +35,10 @@ useEffect(() => {
       setLocalError('Folder name is too long (max 100 characters).');
       return;
     }
-
+    if (!currentUserId) {               
+    setLocalError('You must be logged in to create a folder.');
+    return;
+  }
     // Call Zustand action to add folder
     await addFolder(name, currentUserId);
     

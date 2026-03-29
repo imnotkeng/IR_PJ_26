@@ -224,3 +224,58 @@ def get_fast_suggestion(q: str = Query(..., description="Query to spell check"))
         return {"suggestion": None}
     except Exception as e:
         return {"suggestion": None}
+    
+@router.get("/api/recipes/{recipe_id}/similar")
+def get_similar_recipes(recipe_id: int):
+    """IR Feature: Returns recipes that are similar to the given recipe_id using TF-IDF / BM25"""
+    try:
+        # 1.Find ES Internal _id 
+        doc_res = es.search(index=INDEX_NAME, body={"query": {"term": {"RecipeId": recipe_id}}})
+        
+        if doc_res["hits"]["total"]["value"] == 0:
+            return []
+            
+        es_internal_id = doc_res["hits"]["hits"][0]["_id"]
+
+        # 2. more_like_this command
+        body = {
+            "size": 4, # เอาแค่ 4 เมนูพอให้ UI สวยงาม
+            "query": {
+                "more_like_this": {
+                    "fields": ["RecipeIngredientParts", "Keywords", "Name_clean"], # เทียบความคล้ายจากส่วนผสมและชื่อ
+                    "like": [
+                        {"_index": INDEX_NAME, "_id": es_internal_id}
+                    ],
+                    "min_term_freq": 1,
+                    "min_doc_freq": 1
+                }
+            }
+        }
+        
+        response = es.search(index=INDEX_NAME, body=body)
+        
+        similar_recipes = []
+        for hit in response["hits"]["hits"]:
+            item = hit["_source"]
+            
+            
+            images = item.get("Images", [])
+            if isinstance(images, list) and len(images) > 0:
+                image_link = images[0]
+            elif isinstance(images, str) and images.strip() != "":
+                image_link = images
+            else:
+                image_link = "https://placehold.co/600x400?text=No+Image"
+                
+            similar_recipes.append({
+                "id": str(item.get("RecipeId")),
+                "name": item.get("Name", "Unknown"),
+                "image_url": image_link,
+                "minutes": item.get("TotalTime", 0)
+            })
+            
+        return similar_recipes
+        
+    except Exception as e:
+        print("MLT Error:", e)
+        return []

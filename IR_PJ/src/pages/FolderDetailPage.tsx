@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '@/service/apiClient';
-import { bookmarkService, type Bookmark } from '@/service/bookmarkService';
-
+import { bookmarkService } from '@/service/bookmarkService';
+import { type Bookmark } from '@/types/recipe';
 import { useFolderStore } from '@/store/folderStore';
 import { Star, Trash2, Sparkles, Loader2 } from "lucide-react";
-import { type Recommendation } from '@/types/recipe';
+import { type Recommendation, type Recipe, type SimilarRecipe } from '@/types/recipe';
 import { formatDuration } from '@/lib/utils';
+import { RecipeModal } from '@/components/RecipeModal'; 
+import BookmarkModal from '@/components/BookmarkModal'; 
+
 export default function FolderDetailPage() {
   const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
@@ -14,10 +17,13 @@ export default function FolderDetailPage() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  
+
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [recipeToBookmark, setRecipeToBookmark] = useState<Recipe | null>(null);
 
   const { folders } = useFolderStore();
   const currentFolder = folders.find(f => f.id === Number(folderId));
@@ -26,26 +32,17 @@ export default function FolderDetailPage() {
     const fetchFolderBookmarks = async () => {
       if (!folderId) return;
       try {
-        // 1. Fetch bookmarks from PostgreSQL (Only has recipe_id)
         const bookmarkData = await bookmarkService.getFolderBookmarks(Number(folderId));
-
-        // 2. Fetch full recipe details from ElasticSearch using Promise.all()
         const populatedBookmarks = await Promise.all(
           bookmarkData.map(async (bookmark) => {
             try {
-              // Replace this URL with your actual ElasticSearch / single recipe endpoint
              const recipeResponse = await apiClient.get(`/api/recipes/${bookmark.recipe_id}`);
-              
-              // Combine the bookmark data with the fetched recipe data
               return { ...bookmark, recipe: recipeResponse.data };
-            } catch (err) {
-              console.error(`Failed to fetch recipe ${bookmark.recipe_id}`);
-              return bookmark; // Return bookmark without recipe if fetch fails
+            } catch {
+              return bookmark; 
             }
           })
         );
-
-        // 3. Save the fully populated data to state
         setBookmarks(populatedBookmarks);
       } catch (error) {
         console.error("Failed to load folder bookmarks", error);
@@ -53,23 +50,17 @@ export default function FolderDetailPage() {
         setIsLoading(false);
       }
     };
-    
     fetchFolderBookmarks();
   }, [folderId]);
 
   const handleDelete = async (e: React.MouseEvent, bookmarkId: number) => {
-    e.stopPropagation(); // Stops the card click event from firing
-    
-    if (!window.confirm("Are you sure you want to remove this recipe from the folder?")) {
-      return;
-    }
+    e.stopPropagation(); 
+    if (!window.confirm("Are you sure you want to remove this recipe from the folder?")) return;
 
     try {
       await bookmarkService.deleteBookmark(bookmarkId);
-      // Remove the item from the screen without refreshing
       setBookmarks(prev => prev.filter(b => b.id !== bookmarkId));
-    } catch (error) {
-      console.error("Failed to delete bookmark", error);
+    } catch {
       alert("Could not delete the bookmark. Please try again.");
     }
   };
@@ -77,16 +68,32 @@ export default function FolderDetailPage() {
   const handleGetSuggestions = async () => {
     setIsGenerating(true);
     setHasGenerated(true);
-    
     try {
       const response = await apiClient.get(`/api/recommendations/folder/${folderId}`);
       setRecommendations(response.data);
-    } catch (error) {
-      console.error("Failed to generate suggestions", error);
+    } catch  {
       alert("Could not generate suggestions. Please make sure your ML server is running.");
       setHasGenerated(false);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+
+const handleOpenRecipe = async (recipeData: Recipe | Recommendation | SimilarRecipe | undefined) => {
+
+  if (!recipeData) return;
+    try {
+        const id = 'recipe_id' in recipeData ? recipeData.recipe_id : recipeData.id;
+        const response = await apiClient.get(`/api/recipes/${id}`);
+        // Merge reasons if they came from an ML recommendation
+        const fullRecipe = {
+            ...response.data,
+            reasons: recipeData.reasons 
+        };
+        setSelectedRecipe(fullRecipe);
+    } catch (error) {
+        console.error("Failed to fetch full recipe", error);
     }
   };
 
@@ -95,11 +102,7 @@ export default function FolderDetailPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 pt-10 pb-20">
       <div className="p-6 max-w-6xl mx-auto">
-        
-        <button 
-          onClick={() => navigate('/folders')}
-          className="text-blue-500 hover:underline mb-6 flex items-center gap-2"
-        >
+        <button onClick={() => navigate('/folders')} className="text-blue-500 hover:underline mb-6 flex items-center gap-2">
           ← Back to Folders
         </button>
 
@@ -112,20 +115,12 @@ export default function FolderDetailPage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                {currentFolder ? currentFolder.name : "Folder Details"}
-              </h1>
+              <h1 className="text-3xl font-bold text-gray-800">{currentFolder ? currentFolder.name : "Folder Details"}</h1>
               <p className="text-gray-500">{bookmarks.length} saved recipes inside</p>
             </div>
           </div>
-
-          {/* NEW: Get Suggestions Button (Only show if there are bookmarks) */}
           {bookmarks.length > 0 && (
-            <button
-              onClick={handleGetSuggestions}
-              disabled={isGenerating}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all disabled:opacity-70"
-            >
+            <button onClick={handleGetSuggestions} disabled={isGenerating} className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-all disabled:opacity-70">
               {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
               {isGenerating ? "Analyzing Tastes..." : "Get Smart Suggestions"}
             </button>
@@ -136,10 +131,7 @@ export default function FolderDetailPage() {
         {bookmarks.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-xl border border-gray-200 shadow-sm">
             <p className="text-gray-500 text-lg">This folder is empty.</p>
-            <button 
-              onClick={() => navigate('/search')}
-              className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition"
-            >
+            <button onClick={() => navigate('/search')} className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition">
               Discover Recipes
             </button>
           </div>
@@ -148,7 +140,8 @@ export default function FolderDetailPage() {
             {bookmarks.map((bookmark) => (
               <div 
                 key={bookmark.id} 
-                onClick={() => navigate(`/recipe/${bookmark.recipe_id}`)}
+                onClick={() => handleOpenRecipe(bookmark.recipe)} 
+              
                 className="group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer h-full relative"
               >
                 <button
@@ -167,7 +160,6 @@ export default function FolderDetailPage() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
                   <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-amber-600 flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-bold shadow-sm z-10">
                     <Star className="w-4 h-4 fill-current" /> {bookmark.rating}
                   </div>
@@ -177,7 +169,6 @@ export default function FolderDetailPage() {
                   <h3 className="font-display text-lg font-bold text-slate-800 mb-2 line-clamp-2">
                     {bookmark.recipe?.name || `Recipe #${bookmark.recipe_id}`}
                   </h3>
-                  
                   <div className="mt-auto pt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-50">
                     <span>{formatDuration(bookmark.recipe?.minutes ? `${bookmark.recipe.minutes} mins` : '')}</span>
                     <span>Saved: {new Date(bookmark.created_at).toLocaleDateString()}</span>
@@ -188,7 +179,7 @@ export default function FolderDetailPage() {
           </div>
         )}
 
-        {/* NEW: Machine Learning Suggestions Section */}
+        {/* ML Suggestions Grid */}
         {hasGenerated && (
           <div className="mt-20 border-t border-gray-200 pt-12">
             <div className="flex items-center gap-3 mb-8">
@@ -208,7 +199,7 @@ export default function FolderDetailPage() {
                 {recommendations.map((rec) => (
                   <div 
                     key={rec.id} 
-                    onClick={() => navigate(`/recipe/${rec.id}`)}
+                    onClick={() => handleOpenRecipe(rec)} 
                     className="group flex flex-col bg-gradient-to-b from-purple-50 to-white rounded-2xl border border-purple-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer h-full relative"
                   >
                     <div className="relative aspect-square overflow-hidden bg-slate-100 shrink-0">
@@ -219,7 +210,7 @@ export default function FolderDetailPage() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3 right-3 bg-purple-600 text-white flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm z-10">
-                        Match: {(rec.prediction_score * 100).toFixed(0)}%
+                        Score: {(rec.prediction_score * 100).toFixed(0)}
                       </div>
                     </div>
 
@@ -233,6 +224,24 @@ export default function FolderDetailPage() {
               </div>
             )}
           </div>
+        )}
+
+        {selectedRecipe && (
+          <RecipeModal 
+            recipe={selectedRecipe} 
+            onClose={() => setSelectedRecipe(null)} 
+            onBookmarkClick={(recipe) => setRecipeToBookmark(recipe)}
+            onSimilarClick={(recipe) => handleOpenRecipe(recipe)}
+          />
+        )}
+
+        {recipeToBookmark && (
+          <BookmarkModal
+            isOpen={!!recipeToBookmark}
+            onClose={() => setRecipeToBookmark(null)}
+            recipeId={Number(recipeToBookmark.id)} 
+            recipeName={recipeToBookmark.name}
+          />
         )}
 
       </div>

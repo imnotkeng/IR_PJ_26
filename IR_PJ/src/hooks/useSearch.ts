@@ -2,7 +2,7 @@ import { useSearchStore } from '../store/searchStore';
 import { searchRecipesApi, getSpellSuggestionApi} from '../service/searchService'; 
 
 export const useSearch = () => {
-  const { query, setQuery, setResults, setIsLoading, setSuggestion } = useSearchStore();
+  const {  setQuery, setResults, setIsLoading, setSuggestion } = useSearchStore();
 
   const handleSearch = async (searchQuery: string) => {
     setQuery(searchQuery);
@@ -30,7 +30,7 @@ export const useSearch = () => {
       const suggestion = await getSpellSuggestionApi(query);
       setSuggestion(suggestion);
     } catch (error) {
-      console.error("Failed to fetch suggestion");
+      console.error("Failed to fetch suggestion", error);
     }
   };
 
