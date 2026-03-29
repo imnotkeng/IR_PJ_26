@@ -36,10 +36,15 @@ export default function Navbar() {
             <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>
+            <Link to="/bookmarks" className="hover:text-primary transition-colors">
+              Bookmarks
+            </Link>
             <Link to="/folders" className="hover:text-primary transition-colors">
               My Folders
             </Link>
+            
           </div>
+          
         )}
 
         {/* User Profile Action */}
