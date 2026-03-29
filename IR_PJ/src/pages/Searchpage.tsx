@@ -1,34 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { SearchBar } from '@/components/searchBar';
 import { useSearchStore } from '@/store/searchStore';
-import { useSearch } from '@/hooks/useSearch';
 import { RecipeCard } from '@/components/RecipeCard';
 import { RecipeModal } from '@/components/RecipeModal';
 import { motion } from "framer-motion";
 import type { Recipe } from '@/types/recipe';
 
 export const Searchpage = () => {
-  const { results, isLoading, suggestion, query } = useSearchStore();
-  const { acceptSuggestion } = useSearch();
+  // We can remove 'suggestion' from here since SearchBar handles it
+  const { results, isLoading, query } = useSearchStore(); 
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+
+  // This stops React from slowing down when you type
+  const handleRecipeClick = useCallback((recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
-      {/* ใส่ SearchBar ที่มี Hero UI ไว้ด้านบนสุด */}
       <SearchBar />
 
       <div className="container mx-auto px-6 max-w-7xl">
-        {suggestion && (
-          <div className="mb-8 p-4 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-center max-w-2xl mx-auto shadow-sm">
-            Did you mean: {' '}
-            <button onClick={acceptSuggestion} className="font-bold underline hover:text-amber-600 transition-colors">
-              {suggestion}
-            </button>
-            ?
-          </div>
-        )}
-
-        {/* Section Header สไตล์รูปที่ 2 */}
+        
+        {/* Section Header */}
         {results && results.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -57,7 +51,7 @@ export const Searchpage = () => {
                 key={recipe.id} 
                 recipe={recipe} 
                 index={index}
-                onClick={(clickedRecipe) => setSelectedRecipe(clickedRecipe)} 
+                onClick={handleRecipeClick} 
               />
             ))}
           </div>

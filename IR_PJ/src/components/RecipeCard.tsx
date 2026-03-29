@@ -1,35 +1,17 @@
 import React from 'react';
-import { Bookmark, Star, Clock } from "lucide-react";
+import { Bookmark, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Recipe } from '../types/recipe';
+import { formatDuration } from '@/lib/utils';
 
 interface Props {
   recipe: Recipe;
   onClick: (recipe: Recipe) => void;
-  onBookmarkClick: (recipe: Recipe) => void; // 👈 NEW PROP
+  onBookmarkClick: (recipe: Recipe) => void; 
   index?: number;
 }
 
-const formatDuration = (duration: string | number) => {
-  if (typeof duration === 'number') return `${duration} mins`;
-  if (!duration || !duration.toString().startsWith('PT')) return duration;
 
-  const str = duration.toString();
-  let hours = 0;
-  let minutes = 0;
-
-  const hourMatch = str.match(/(\d+)H/);
-  const minuteMatch = str.match(/(\d+)M/);
-
-  if (hourMatch) hours = parseInt(hourMatch[1], 10);
-  if (minuteMatch) minutes = parseInt(minuteMatch[1], 10);
-
-  const parts = [];
-  if (hours > 0) parts.push(`${hours} hr${hours > 1 ? 's' : ''}`);
-  if (minutes > 0) parts.push(`${minutes} min${minutes > 1 ? 's' : ''}`);
-
-  return parts.length > 0 ? parts.join(' ') : '0 mins';
-};
 
 export const RecipeCard = ({ recipe, onClick, onBookmarkClick, index = 0 }: Props) => {
   return (
@@ -84,14 +66,14 @@ export const RecipeCard = ({ recipe, onClick, onBookmarkClick, index = 0 }: Prop
         )}
 
         <div className="flex items-center justify-between text-slate-500 text-sm font-medium border-t border-slate-50 pt-4 mt-auto">
-          <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-md text-amber-600">
-            <Star className="w-4 h-4 fill-current" />
-            <span>4.5</span>
-          </div>
+
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4 text-blue-500" />
             <span>{formatDuration(recipe.minutes)}</span>
           </div>
+
+                     <span>Score: {recipe.score.toFixed(2)}</span>
+       
         </div>
       </div>
     </motion.div>

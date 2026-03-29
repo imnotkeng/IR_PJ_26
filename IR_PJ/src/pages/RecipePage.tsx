@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '@/service/apiClient';
 import { Bookmark, Clock, ArrowLeft } from "lucide-react";
 import type { Recipe } from '@/types/recipe';
 import BookmarkModal from '@/components/BookmarkModal'; // We can still allow them to re-bookmark/update it here!
-
+import { formatDuration } from '@/lib/utils';
 export default function RecipePage() {
   const { recipeId } = useParams<{ recipeId: string }>();
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function RecipePage() {
     const fetchRecipe = async () => {
       if (!recipeId) return;
       try {
-        const response = await axios.get(`http://127.0.0.1:5001/api/recipes/${recipeId}`);
+        const response = await apiClient.get(`/api/recipes/${recipeId}`);
         setRecipe(response.data);
       } catch (err) {
         setError("Failed to load recipe details. It may have been removed.");
@@ -55,7 +55,8 @@ export default function RecipePage() {
       
       {/* 1. Hero Image Section */}
       <div className="relative h-[40vh] md:h-[50vh] w-full">
-        <img 
+        <img
+          loading="lazy" 
           src={recipe.image_url} 
           alt={recipe.name} 
           className="w-full h-full object-cover"
@@ -63,7 +64,6 @@ export default function RecipePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent" />
         
-        {/* Top Navigation Bar */}
         <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10">
           <button 
             onClick={() => navigate(-1)} // Goes back to the previous page
@@ -80,7 +80,6 @@ export default function RecipePage() {
           </button>
         </div>
 
-        {/* Title overlaying image */}
         <div className="absolute bottom-10 left-6 right-6 md:left-20 md:right-20">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg leading-tight">
             {recipe.name}
@@ -88,16 +87,13 @@ export default function RecipePage() {
         </div>
       </div>
       
-      {/* 2. Content Container (pulled up slightly over the image) */}
       <div className="max-w-4xl mx-auto -mt-8 relative bg-white rounded-t-3xl shadow-xl p-8 md:p-12 border border-slate-100">
-        
-        {/* Meta info tag */}
+
         <div className="flex items-center gap-2 mb-10 bg-blue-50 text-blue-700 w-fit px-5 py-2.5 rounded-full font-semibold text-sm shadow-sm border border-blue-100">
           <Clock className="w-4 h-4" />
-          <span>{recipe.minutes} mins</span>
+          <span>{formatDuration(recipe.minutes)}</span>
         </div>
         
-        {/* Ingredients */}
         <div className="mb-12">
           <h3 className="text-2xl font-bold text-slate-800 border-b-2 border-slate-100 pb-3 mb-6">
             Ingredients

@@ -8,10 +8,10 @@ interface Props {
   subtitle: string;
   recipes: CarouselRecipe[];
   isLoading: boolean;
+  onRecipeClick: (recipe: any) => void;
 }
 
-export const RecipeCarousel = ({ title, subtitle, recipes, isLoading }: Props) => {
-  const navigate = useNavigate();
+export const RecipeCarousel = ({ title, subtitle, recipes, isLoading, onRecipeClick }: Props) => {
 
   if (isLoading) {
     return (
@@ -39,7 +39,7 @@ export const RecipeCarousel = ({ title, subtitle, recipes, isLoading }: Props) =
         {recipes.map((rec) => (
           <div 
             key={rec.id}
-            onClick={() => navigate(`/recipe/${rec.id}`)}
+            onClick={() => onRecipeClick(rec)}
             className="snap-start shrink-0 w-[260px] sm:w-[280px] group flex flex-col bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer"
           >
             <div className="relative h-48 overflow-hidden bg-slate-100">
@@ -53,7 +53,7 @@ export const RecipeCarousel = ({ title, subtitle, recipes, isLoading }: Props) =
               
               {rec.prediction_score && (
                 <div className="absolute top-3 right-3 bg-purple-600 text-white flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm">
-                  Match: {(rec.prediction_score * 100).toFixed(0)}%
+                  Similarity: {rec.prediction_score.toFixed(2)}
                 </div>
               )}
             </div>

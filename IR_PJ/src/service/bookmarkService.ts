@@ -1,36 +1,27 @@
-import axios from 'axios';
+import { apiClient } from './apiClient'; 
+import type { Bookmark } from '@/types/recipe';
 
-const API_URL = 'http://127.0.0.1:5001/api/bookmarks';
-import type { Recipe } from '@/types/recipe';
 
-export interface Bookmark {
-  id: number;
-  user_id: number;
-  folder_id: number;
-  recipe_id: number | string; // ElasticSearch sometimes uses string IDs
-  rating: number;
-  folder_name: string;
-  created_at: string;
-  recipe?: Recipe; // 👈 Add this optional property!
-}
+
+const ENDPOINT = '/api/bookmarks'; 
 
 export const bookmarkService = {
   getUserBookmarks: async (userId: number): Promise<Bookmark[]> => {
-    const response = await axios.get<Bookmark[]>(`${API_URL}/${userId}`);
+    const response = await apiClient.get<Bookmark[]>(`${ENDPOINT}/${userId}`);
     return response.data;
   },
 
   createBookmark: async (data: { user_id: number; folder_id: number; recipe_id: number; rating: number }): Promise<Bookmark> => {
-    const response = await axios.post<Bookmark>(API_URL, data);
+    const response = await apiClient.post<Bookmark>(ENDPOINT, data);
     return response.data;
   },
 
   getFolderBookmarks: async (folderId: number): Promise<Bookmark[]> => {
-    const response = await axios.get<Bookmark[]>(`${API_URL}/folder/${folderId}`);
+    const response = await apiClient.get<Bookmark[]>(`${ENDPOINT}/folder/${folderId}`);
     return response.data;
   },
 
   deleteBookmark: async (bookmarkId: number): Promise<void> => {
-    await axios.delete(`${API_URL}/${bookmarkId}`);
+    await apiClient.delete(`${ENDPOINT}/${bookmarkId}`);
   },
 };

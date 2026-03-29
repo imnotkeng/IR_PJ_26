@@ -1,8 +1,9 @@
 import axios from 'axios';
 import type { SearchResponse } from '../types/recipe';
-
+import { API_URL } from '../config';
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:5001', 
+  baseURL: API_URL, 
+
 });
 
 export const searchRecipesApi = async (query: string): Promise<SearchResponse> => {
@@ -11,4 +12,11 @@ export const searchRecipesApi = async (query: string): Promise<SearchResponse> =
   });
   console.log(response.data)
   return response.data;
+};
+
+export const getSpellSuggestionApi = async (query: string): Promise<string | null> => {
+  const response = await api.get('/api/suggest', {
+    params: { q: query }
+  });
+  return response.data.suggestion;
 };
