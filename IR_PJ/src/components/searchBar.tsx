@@ -14,7 +14,7 @@ export const SearchBar = () => {
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
-  const navigate = useNavigate(); // 👈 Initialize navigate
+  const navigate = useNavigate(); 
 
  const showSuggestion = (
   (isFocused && localQuery.trim().length >= 2) ||
@@ -39,7 +39,6 @@ export const SearchBar = () => {
     e.preventDefault();
     setIsFocused(false);
     if (localQuery.trim()) {
-      // 👈 Navigate to the new page with the query in the URL
       navigate(`/search?q=${encodeURIComponent(localQuery.trim())}`);
     }
   };
@@ -47,7 +46,6 @@ export const SearchBar = () => {
   const handleAccept = (text: string) => {
     setLocalQuery(text);
     setIsFocused(false);
-    // 👈 Navigate immediately when a suggestion is clicked
     navigate(`/search?q=${encodeURIComponent(text)}`);
   };
 

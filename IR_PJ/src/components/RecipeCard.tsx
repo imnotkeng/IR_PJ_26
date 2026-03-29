@@ -40,7 +40,7 @@ export const RecipeCard = ({ recipe, onClick, onBookmarkClick, index = 0 }: Prop
           className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-sm rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-500 hover:text-white hover:scale-110 shadow-sm z-10"
           onClick={(e) => {
             e.stopPropagation(); // Prevents opening the RecipeModal
-            onBookmarkClick(recipe); // 👈 Triggers the BookmarkModal
+            onBookmarkClick(recipe); 
           }}
           title="Save Recipe"
         >

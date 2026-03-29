@@ -67,26 +67,25 @@ export const HomePage = () => {
     <div className="bg-slate-50 min-h-screen pb-12 overflow-x-hidden">
       <SearchBar />
 
-      {user && summaryList.length > 0 && (
-        <RecipeCarousel 
-          title="Recommended For You" 
-          subtitle="Based on everything you have saved"
-          recipes={summaryList} 
-          isLoading={isLoading} 
-          onRecipeClick={handleRecipeClick}
-        />
-      )}
+      {user && (isLoading || summaryList.length > 0) && (
+            <RecipeCarousel 
+              title="Recommended For You"
+              subtitle="Based on everything you have saved"
+              recipes={summaryList} 
+              isLoading={isLoading} 
+              onRecipeClick={handleRecipeClick}
+            />
+          )}
 
-      {user && categoryList.length > 0 && (
-        <RecipeCarousel 
-          title={`Because you like ${categoryName}`} 
-          subtitle="Smart suggestions from your folder"
-          recipes={categoryList} 
-          isLoading={isLoading} 
-         onRecipeClick={handleRecipeClick}
-        />
-      )}
-
+          {user && (isLoading || categoryList.length > 0) && (
+            <RecipeCarousel 
+              title={`Because you like ${categoryName}`}
+              subtitle="Smart suggestions from your folder"
+              recipes={categoryList} 
+              isLoading={isLoading} 
+              onRecipeClick={handleRecipeClick}
+            />
+          )}
       <RecipeCarousel 
         title="Discover Something New" 
         subtitle="Random dishes to inspire your next meal"
