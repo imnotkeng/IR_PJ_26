@@ -2,9 +2,13 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import type { ReactNode } from "react"; 
 import { useEffect } from "react"; // 🌟 1. เพิ่ม useEffect
 import Navbar from "./components/navbar";
-import { Searchpage } from "./pages/Searchpage";
+import { SearchResultsPage } from "./pages/SearchResultsPage";
 import Auth from "./pages/Auth";
-import { useAuthStore } from "./store/authStore"; // 🌟 2. Import Store ของเราเข้ามา
+import { useAuthStore } from "./store/authStore"; 
+import FolderPage from "./pages/FolderPage";
+import { HomePage } from "./pages/HomePage";
+import FolderDetailPage from "./pages/FolderDetailPage";
+import RecipePage from "./pages/RecipePage";
 
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -36,15 +40,12 @@ const MainLayout = () => {
 
       <div className={!isAuthPage ? "pt-16" : ""}>
         <Routes>
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <Searchpage />
-              </ProtectedRoute>
-            } 
-          />
+          <Route path="/" element={<HomePage />}/>
+          <Route path="/search" element={<SearchResultsPage />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/folders" element={<FolderPage />} />
+           <Route path="/folders/:folderId" element={<FolderDetailPage />} />
+           <Route path="/recipe/:recipeId" element={<RecipePage />} /> 
         </Routes>
       </div>
     </>

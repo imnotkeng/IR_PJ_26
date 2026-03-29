@@ -1,11 +1,28 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 import uvicorn
  
+# Import the ML service we just created
+from ml_service import ml
+
 from routes.search_routes import router as search_router
-from routes.auth_routes import router as auth_router   # ← NEW
- 
-app = FastAPI()
+from routes.auth_routes import router as auth_router
+from routes.folder_routes import router as folder_router
+from routes.bookmark_routes import router as bookmark_router 
+from routes.recommendation_routes import router as recommendation_router
+
+# This runs once when the server starts
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load models here
+    ml.load_models()
+    yield
+    # Code here runs when the server shuts down
+    print("Shutting down server...")
+
+# Add lifespan to the FastAPI app
+app = FastAPI(lifespan=lifespan)
  
 # CORS
 app.add_middleware(
@@ -18,8 +35,12 @@ app.add_middleware(
  
 # Routers
 app.include_router(search_router)
-app.include_router(auth_router)   # ← NEW  (prefix="/auth" is set inside auth_routes.py)
+app.include_router(auth_router)
+app.include_router(folder_router)
+app.include_router(bookmark_router) 
+app.include_router(recommendation_router)
+
 print("http://127.0.0.1:5001/docs#/")
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=5001, reload=True)
- 

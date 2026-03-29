@@ -1,36 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom'; 
 import { useSearch } from '../hooks/useSearch';
 import { useSearchStore } from '@/store/searchStore';
 import { SearchSuggestion } from './SearchSuggestion';
 import heroImage from "@/assets/hero-food.jpg";
 
-
 export const SearchBar = () => {
   const [localQuery, setLocalQuery] = useState('');
-  const { handleSearch, fetchSuggestion, acceptSuggestion } = useSearch();
+  const { fetchSuggestion } = useSearch();
   const { suggestion, query } = useSearchStore();
   const [isFocused, setIsFocused] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  const navigate = useNavigate(); // 👈 Initialize navigate
 
   const showSuggestion = (
-  (isFocused && localQuery.trim().length >= 2) ||
-  (query && localQuery === query)  // หลัง search เสร็จ
-) && !!suggestion;
+    (isFocused && localQuery.trim().length >= 2) ||
+    (query && localQuery === query)
+  ) && !!suggestion;
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-
     if (localQuery.trim().length >= 2) {
       debounceRef.current = setTimeout(() => {
         fetchSuggestion(localQuery);
       }, 400);
     } else {
-      // Clear old suggestion when query is too short
       useSearchStore.getState().setSuggestion(null);
     }
-
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -39,13 +38,17 @@ export const SearchBar = () => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsFocused(false);
-    handleSearch(localQuery);
+    if (localQuery.trim()) {
+      // 👈 Navigate to the new page with the query in the URL
+      navigate(`/search?q=${encodeURIComponent(localQuery.trim())}`);
+    }
   };
 
   const handleAccept = (text: string) => {
     setLocalQuery(text);
     setIsFocused(false);
-    acceptSuggestion(text);
+    // 👈 Navigate immediately when a suggestion is clicked
+    navigate(`/search?q=${encodeURIComponent(text)}`);
   };
 
   return (
