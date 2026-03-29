@@ -9,6 +9,7 @@ import FolderPage from "./pages/FolderPage";
 import { HomePage } from "./pages/HomePage";
 import FolderDetailPage from "./pages/FolderDetailPage";
 import RecipePage from "./pages/RecipePage";
+import BookmarksPage from "./pages/BookmarksPage";
 
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
@@ -46,6 +47,7 @@ const MainLayout = () => {
           <Route path="/folders" element={<FolderPage />} />
            <Route path="/folders/:folderId" element={<FolderDetailPage />} />
            <Route path="/recipe/:recipeId" element={<RecipePage />} /> 
+           <Route path="/bookmarks" element={<BookmarksPage />} />
         </Routes>
       </div>
     </>
