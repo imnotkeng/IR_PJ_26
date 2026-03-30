@@ -1,0 +1,19 @@
+# --- ทั่วไป ---
+.env
+.DS_Store
+*.local
+
+# --- Node / Frontend (IR_PJ) ---
+node_modules/
+**/node_modules/
+IR_PJ/dist/
+IR_PJ/dist-ssr/
+
+# --- Python / Backend ---
+/Backend/resource/
+__pycache__/
+**/__pycache__/
+*.pyc
+venv/
+.venv/
+env/
